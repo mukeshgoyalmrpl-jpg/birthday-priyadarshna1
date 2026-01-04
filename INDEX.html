@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Birthday Entry 🎁</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  margin: 0;
+  height: 100vh;
+  background: url("https://images.unsplash.com/photo-1527529482837-4698179dc6ce")
+    no-repeat center/cover;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: Poppins, sans-serif;
+}
+
+.overlay {
+  background: rgba(0,0,0,0.7);
+  padding: 40px;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  color: white;
+}
+
+input, button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  border-radius: 10px;
+  border: none;
+  font-size: 1rem;
+}
+
+button {
+  background: #ff5e78;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #ff3b5f;
+}
+
+.error {
+  color: #ffb3b3;
+  margin-top: 10px;
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="overlay">
+  <h1>🎂 Birthday Entry 🎂</h1>
+
+  <form id="entryForm">
+    <input type="text" id="name" placeholder="Enter Full Name" required>
+    <input type="text" id="nickname" placeholder="Enter Nickname">
+    <button type="submit">Submit 🎉</button>
+  </form>
+
+  <div class="error" id="error">
+    ❌ Name must be <b>Priyadarshana</b>
+  </div>
+</div>
+
+<script>
+document.getElementById("entryForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+
+  const name = document.getElementById("name").value.trim();
+  const nickname = document.getElementById("nickname").value.trim();
+
+  if (name === "Priyadarshana Goyal") {
+    localStorage.setItem("name", name);
+    localStorage.setItem("nickname", nickname);
+    window.location.href = "birthday.html";
+  } else {
+    document.getElementById("error").style.display = "block";
+  }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Happy Birthday 🎉</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  margin: 0;
+  font-family: Poppins, sans-serif;
+  background: linear-gradient(135deg,#ff9a9e,#fad0c4);
+  text-align: center;
+  overflow-x: hidden;
+}
+
+h1 {
+  color: white;
+  margin-top: 20px;
+}
+
+.section {
+  background: white;
+  margin: 25px auto;
+  padding: 25px;
+  max-width: 900px;
+  border-radius: 20px;
+  display: none;
+}
+
+.section h2 {
+  color: #ff5e78;
+}
+
+/* 🔥 RESPONSIVE PUZZLE */
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: min(90vw, 320px);
+  aspect-ratio: 1 / 1;
+  margin: 20px auto;
+  touch-action: none;
+}
+
+.tile {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background-image: url("ing.jpeg"); /* 🔁 CHANGE IMAGE HERE */
+  background-size: 300% 300%;
+  border-radius: 12px;
+  cursor: grab;
+  transition: transform 0.25s cubic-bezier(.25,.8,.25,1),
+              box-shadow 0.2s ease;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.tile:active {
+  cursor: grabbing;
+  box-shadow: 0 12px 20px rgba(0,0,0,0.25);
+}
+
+.empty {
+  background: none;
+  box-shadow: none;
+  cursor: default;
+}
+
+.success {
+  font-size: 1.4rem;
+  color: green;
+  display: none;
+  margin-top: 10px;
+}
+
+/* GALLERY */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(150px,1fr));
+  gap: 15px;
+}
+
+.gallery img {
+  width: 100%;
+  border-radius: 15px;
+}
+
+/* FIREWORKS */
+canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="fireworks"></canvas>
+
+<h1 id="title"></h1>
+
+<!-- 🔐 LETTER 1 : PUZZLE -->
+<div class="section" id="letter1" style="display:block;">
+  <h2>🎮 Letter 1: Sliding Puzzle</h2>
+  <p>Drag tiles into the empty space 🧩</p>
+
+  <div class="game-grid" id="puzzle"></div>
+  <button onclick="shuffle()">🔄 Shuffle</button>
+
+  <div class="success" id="successMsg">
+    🎆 Puzzle Solved! 🎆
+  </div>
+</div>
+
+<!-- 🔓 LETTER 2 -->
+<div class="section" id="letter2">
+  <h2>💌 Letter 2: Bio Data</h2>
+  <p><b>Name:</b> Priyadarshna</p>
+  <p><b>Nickname:</b> Angel 💖</p>
+  <p><b>Date of Birth:</b> 15 February</p>
+</div>
+
+<!-- 🔓 LETTER 3 -->
+<div class="section" id="letter3">
+  <h2>🎂 Letter 3: Birthday Wishes</h2>
+  <p>
+    Happy Birthday to the most special person 💕  
+    May your life always be filled with happiness, love, and success ✨
+  </p>
+</div>
+
+<!-- 🔓 LETTER 4 -->
+<div class="section" id="letter4">
+  <h2>📸 Letter 4: Photographs</h2>
+  <div class="gallery">
+    <img src="https://picsum.photos/300?1">
+    <img src="https://picsum.photos/300?2">
+    <img src="https://picsum.photos/300?3">
+    <img src="https://picsum.photos/300?4">
+  </div>
+</div>
+
+<script>
+/* 🔐 ENTRY CHECK */
+const name = localStorage.getItem("name");
+const nickname = localStorage.getItem("nickname");
+if (!name) location.href = "index.html";
+
+document.getElementById("title").innerText =
+  `🎉 Happy Birthday ${nickname || name}! 🎉`;
+
+/* 🧩 RESPONSIVE DRAG PUZZLE */
+const puzzle = document.getElementById("puzzle");
+const SIZE = 3;
+let tiles = [];
+let emptyIndex = SIZE * SIZE - 1;
+let dragTile = null;
+let startX = 0;
+let startY = 0;
+
+function tileSize() {
+  return puzzle.clientWidth / SIZE;
+}
+
+function createPuzzle() {
+  puzzle.innerHTML = "";
+  tiles = [];
+
+  for (let i = 0; i < SIZE * SIZE; i++) {
+    const tile = document.createElement("div");
+
+    if (i === emptyIndex) {
+      tile.className = "tile empty";
+    } else {
+      tile.className = "tile";
+      const size = tileSize();
+      tile.style.backgroundPosition =
+        `${-(i % SIZE) * size}px ${-Math.floor(i / SIZE) * size}px`;
+
+      tile.addEventListener("mousedown", e => startDrag(e, i));
+      tile.addEventListener("touchstart", e => startDrag(e, i), { passive:false });
+    }
+
+    tiles.push(tile);
+    puzzle.appendChild(tile);
+  }
+}
+
+function startDrag(e, index) {
+  if (!isAdjacent(index, emptyIndex)) return;
+
+  dragTile = { tile: tiles[index], index };
+  startX = e.touches ? e.touches[0].clientX : e.clientX;
+  startY = e.touches ? e.touches[0].clientY : e.clientY;
+
+  document.addEventListener("mousemove", onDrag);
+  document.addEventListener("touchmove", onDrag, { passive:false });
+  document.addEventListener("mouseup", endDrag);
+  document.addEventListener("touchend", endDrag);
+}
+
+function onDrag(e) {
+  if (!dragTile) return;
+  e.preventDefault();
+
+  const x = e.touches ? e.touches[0].clientX : e.clientX;
+  const y = e.touches ? e.touches[0].clientY : e.clientY;
+
+  const dx = x - startX;
+  const dy = y - startY;
+
+  const er = Math.floor(emptyIndex / SIZE);
+  const ec = emptyIndex % SIZE;
+  const tr = Math.floor(dragTile.index / SIZE);
+  const tc = dragTile.index % SIZE;
+
+  if (tr === er) {
+    dragTile.tile.style.transform = `translate(${dx}px,0)`;
+  } else {
+    dragTile.tile.style.transform = `translate(0,${dy}px)`;
+  }
+}
+
+function endDrag() {
+  if (!dragTile) return;
+
+  dragTile.tile.style.transform = "translate(0,0)";
+  [tiles[dragTile.index], tiles[emptyIndex]] =
+    [tiles[emptyIndex], tiles[dragTile.index]];
+  emptyIndex = dragTile.index;
+
+  render();
+  checkSolved();
+
+  dragTile = null;
+  document.removeEventListener("mousemove", onDrag);
+  document.removeEventListener("touchmove", onDrag);
+  document.removeEventListener("mouseup", endDrag);
+  document.removeEventListener("touchend", endDrag);
+}
+
+function render() {
+  puzzle.innerHTML = "";
+  tiles.forEach(t => puzzle.appendChild(t));
+}
+
+function shuffle() {
+  for (let i = 0; i < 200; i++) {
+    const neighbors = tiles
+      .map((_, idx) => idx)
+      .filter(idx => isAdjacent(idx, emptyIndex));
+
+    const move = neighbors[Math.floor(Math.random() * neighbors.length)];
+    [tiles[move], tiles[emptyIndex]] =
+      [tiles[emptyIndex], tiles[move]];
+    emptyIndex = move;
+  }
+  render();
+}
+
+function isAdjacent(i, e) {
+  const r1 = Math.floor(i / SIZE), c1 = i % SIZE;
+  const r2 = Math.floor(e / SIZE), c2 = e % SIZE;
+  return (r1 === r2 && Math.abs(c1 - c2) === 1) ||
+         (c1 === c2 && Math.abs(r1 - r2) === 1);
+}
+
+function checkSolved() {
+  const solved = tiles.every((tile, i) => {
+    if (i === emptyIndex) return tile.classList.contains("empty");
+    const size = tileSize();
+    return tile.style.backgroundPosition ===
+      `${-(i % SIZE) * size}px ${-Math.floor(i / SIZE) * size}px`;
+  });
+
+  if (solved) unlockLetters();
+}
+
+createPuzzle();
+shuffle();
+
+/* 🔓 UNLOCK + FIREWORKS */
+function unlockLetters() {
+  document.getElementById("successMsg").style.display = "block";
+  ["letter2","letter3","letter4"].forEach(id =>
+    document.getElementById(id).style.display = "block"
+  );
+  startFireworksText("HAPPY BIRTHDAY PRIYADARSHNA");
+}
+
+/* 🎆 FIREWORKS */
+const canvas = document.getElementById("fireworks");
+const ctx = canvas.getContext("2d");
+canvas.width = innerWidth;
+canvas.height = innerHeight;
+
+let particles = [];
+
+function startFireworksText(text) {
+  const off = document.createElement("canvas");
+  off.width = canvas.width;
+  off.height = canvas.height;
+  const offCtx = off.getContext("2d");
+
+  offCtx.font = "bold 80px Poppins";
+  offCtx.textAlign = "center";
+  offCtx.fillText(text, off.width/2, off.height/2);
+
+  const data = offCtx.getImageData(0,0,off.width,off.height).data;
+  particles = [];
+
+  for (let y=0;y<off.height;y+=6){
+    for (let x=0;x<off.width;x+=6){
+      if (data[(y*off.width+x)*4+3] > 150) {
+        particles.push({
+          x:Math.random()*canvas.width,
+          y:Math.random()*canvas.height,
+          tx:x, ty:y,
+          c:`hsl(${Math.random()*360},100%,60%)`
+        });
+      }
+    }
+  }
+}
+
+(function animate(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach(p=>{
+    p.x+=(p.tx-p.x)*0.05;
+    p.y+=(p.ty-p.y)*0.05;
+    ctx.fillStyle=p.c;
+    ctx.fillRect(p.x,p.y,2,2);
+  });
+  requestAnimationFrame(animate);
+})();
+</script>
+
+</body>
+</html>
